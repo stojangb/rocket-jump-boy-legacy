@@ -96,7 +96,12 @@ y exporta las tablas originales de plataformas y objetos desde `src\b.java`.
 Incluye controles táctiles y de teclado, progresión de niveles, vidas,
 puntuación, selección de idioma y guardado local. No es una conversión literal
 del código Java: algunas animaciones y detalles de pantalla pueden diferir. El
-audio MIDI todavía no está portado y aparece como no disponible en las opciones.
+audio utiliza las pistas MIDI originales `music.mid` y `musicDie.mid`, tocadas
+con Web Audio y un sintetizador integrado en la página, sin Java ni servicios
+externos. Se activa al empezar una partida (los navegadores requieren una
+interacción del usuario) y puede apagarse o encenderse en **Opciones → Música**.
+El sintetizador reproduce las notas originales con timbres electrónicos; el
+sonido puede diferir del sintetizador MIDI del juego Windows.
 
 Para generar la página localmente, se necesita Node.js 20 o superior:
 

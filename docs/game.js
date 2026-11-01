@@ -1,3 +1,5 @@
+import { audio } from "./audio.js";
+
 const WIDTH = 176;
 const HEIGHT = 220;
 const FRAME_MS = 60;
@@ -39,6 +41,7 @@ const game = {
   tables: [],
   images: null,
   rankings: [0, 0, 0, 0, 0],
+  soundEnabled: true,
   unlocked: 0,
   level: 0,
   platformIndex: 0,
@@ -158,6 +161,8 @@ function loadSave() {
   game.unlocked = Number.isInteger(save.unlocked) ? Math.min(9, Math.max(0, save.unlocked)) : 0;
   game.languageIndex = Number.isInteger(save.languageIndex) ? Math.min(2, Math.max(0, save.languageIndex)) : 0;
   game.language = LANGUAGES[game.languageIndex];
+  game.soundEnabled = typeof save.soundEnabled === "boolean" ? save.soundEnabled : true;
+  audio.enabled = game.soundEnabled;
   game.rankings = Array.isArray(save.rankings) && save.rankings.length === 5
     ? save.rankings.map((value) => Number.isFinite(value) ? Math.max(0, value) : 0)
     : [0, 0, 0, 0, 0];
@@ -168,6 +173,7 @@ function saveGame() {
     localStorage.setItem("jumpboy-save", JSON.stringify({
       unlocked: game.unlocked,
       languageIndex: game.languageIndex,
+      soundEnabled: game.soundEnabled,
       rankings: game.rankings
     }));
   } catch (error) {
@@ -280,7 +286,7 @@ function drawOptions() {
   drawFull("brand", 0, 0);
   drawCenteredText("OPTIONS", 34);
   drawText("MUSIC", 38, 72);
-  drawText("N/A", 117, 72);
+  drawText(game.soundEnabled ? "ON" : "OFF", 117, 72);
   drawText("LANGUAGE", 38, 112);
   drawLineFromSheet("lang", [0, 4, 6][game.languageIndex], 8, 109, 105);
   drawFull("menu_arrow_left", 83, 151);
@@ -346,6 +352,7 @@ function beginGame(level = 0) {
   game.objects = [];
   loadObjects(0);
   game.state = "playing";
+  void audio.playMusic();
 }
 
 function makePlatform(row, offset) {
@@ -428,6 +435,7 @@ function loseLife() {
   if (game.lives <= 0) {
     game.state = "gameover";
     saveRanking();
+    void audio.playDeath();
   }
 }
 
@@ -482,7 +490,12 @@ function onAction(code) {
   if (game.state === "options") {
     if (code === -1 || code === -2) game.optionsIndex = 1 - game.optionsIndex;
     if (code === -3 || code === -4 || code === 53) {
-      if (game.optionsIndex === 1) {
+      if (game.optionsIndex === 0) {
+        game.soundEnabled = !game.soundEnabled;
+        audio.setEnabled(game.soundEnabled);
+        if (game.soundEnabled && game.returnState === "pause") void audio.playMusic();
+        saveGame();
+      } else {
         game.languageIndex = (game.languageIndex + (code === -3 ? 2 : 1)) % LANGUAGES.length;
         game.language = LANGUAGES[game.languageIndex];
         saveGame();
@@ -566,6 +579,7 @@ function update() {
   if (game.level > 0 && game.timer <= 0) {
     game.state = "gameover";
     saveRanking();
+    void audio.playDeath();
     return;
   }
 
@@ -822,6 +836,8 @@ function drawTouchArrow(cx, cy, code) {
 
 function draw() {
   canvas.dataset.gameState = game.state;
+  canvas.dataset.audioTrack = audio.track;
+  canvas.dataset.audioEnabled = String(game.soundEnabled);
   canvas.dataset.playerMode = String(game.playerState);
   canvas.dataset.playerX = String(Math.round(game.playerX));
   canvas.dataset.playerY = String(Math.round(game.playerY));
@@ -893,6 +909,7 @@ window.addEventListener("keydown", (event) => {
   const code = codeForKey(event);
   if (code === null) return;
   event.preventDefault();
+  audio.unlock();
   if (heldKeys.has(event.code)) return;
   heldKeys.add(event.code);
 });
@@ -925,6 +942,7 @@ function canvasPoint(event) {
 }
 
 canvas.addEventListener("pointerdown", (event) => {
+  audio.unlock();
   canvas.focus({ preventScroll: true });
   const point = canvasPoint(event);
   if (game.state === "playing") {
@@ -965,6 +983,19 @@ canvas.addEventListener("pointerdown", (event) => {
     }
     game.mapLevel = nearest;
     if (distance < 900) beginGame(nearest);
+  } else if (game.state === "options") {
+    if (point.y >= 57 && point.y <= 91) {
+      game.optionsIndex = 0;
+      game.soundEnabled = !game.soundEnabled;
+      audio.setEnabled(game.soundEnabled);
+      if (game.soundEnabled && game.returnState === "pause") void audio.playMusic();
+      saveGame();
+    } else if (point.y >= 96 && point.y <= 133) {
+      game.optionsIndex = 1;
+      game.languageIndex = (game.languageIndex + 1) % LANGUAGES.length;
+      game.language = LANGUAGES[game.languageIndex];
+      saveGame();
+    }
   }
 });
 
@@ -984,6 +1015,10 @@ canvas.addEventListener("pointercancel", () => {
 });
 
 status.classList.remove("error");
+audio.onError = (error) => {
+  status.textContent = `No se pudo reproducir el audio: ${error.message}`;
+  status.classList.add("error");
+};
 loadResources().catch((error) => {
   console.error("Jump Boy failed to load:", error);
   status.textContent = error.message || "No se pudo cargar Jump Boy.";

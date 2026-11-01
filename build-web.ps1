@@ -36,6 +36,12 @@ Get-ChildItem -Path (Join-Path $PSScriptRoot "res") -Recurse -File -Filter *.png
         Copy-Item $_.FullName $destination -Force
     }
 
+Write-Host "==> Copying original MIDI music" -ForegroundColor Cyan
+Get-ChildItem -Path (Join-Path $PSScriptRoot "res") -File -Filter *.mid |
+    ForEach-Object {
+        Copy-Item $_.FullName (Join-Path $assets $_.Name) -Force
+    }
+
 Write-Host "==> Exporting original level tables" -ForegroundColor Cyan
 & $node.Source (Join-Path (Join-Path $PSScriptRoot "tools") "export-levels.mjs") `
     (Join-Path (Join-Path $PSScriptRoot "src") "b.java") (Join-Path $Output "levels.json")
