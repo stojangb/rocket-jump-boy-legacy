@@ -109,6 +109,8 @@ la página `docs\index.html`. Para publicarlo, sube el repositorio a GitHub y en
 `main`; también compila la aplicación Windows y la adjunta como artefacto a la
 ejecución del workflow.
 
+**Jugar online:** <https://stojangb.github.io/rocket-jump-boy-legacy/>
+
 ## Compilar desde el código
 
 Requisitos: **JDK 17 o superior** (probado con Temurin 17.0.20).
