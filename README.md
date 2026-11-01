@@ -90,25 +90,32 @@ iniciales. Para empezar de cero, bórralo con el juego cerrado.
 
 ## Versión web (GitHub Pages)
 
-La versión web es una adaptación nativa en **JavaScript y Canvas**. No descarga
-Java, CheerpJ ni otro motor externo; reutiliza los gráficos y escenarios del
-juego original. Incluye teclado, controles táctiles, diez niveles, puntuación y
-guardado local. Después de la primera visita, la página y sus recursos quedan
-en caché para poder volver a jugar sin conexión. La versión Java para Windows
-permanece separada y sin cambios.
+La versión web ejecuta el port Java en el navegador con **CheerpJ 5**, desde el
+CDN oficial; no es una compilación Unity/WebGL. El código de este repositorio
+tampoco contiene un proyecto Android/Unity. En ordenador se puede jugar con el
+teclado y en móvil o tablet aparecen controles táctiles dentro del juego. La
+primera carga requiere conexión al CDN de CheerpJ. Si tu red bloquea
+`cheerpj.com`, el juego de navegador no podrá descargar ese runtime. El Java
+privado incluido en la versión Windows solo funciona en el ordenador: un
+navegador no puede ejecutar ese runtime ni el `.jar` directamente.
 
-Para preparar la página localmente, desde `Jump-Boy-Port`:
+CheerpJ permite alojar sus propios archivos de runtime, pero su licencia
+reserva esa modalidad para licencias Enterprise. Por eso el proyecto carga
+CheerpJ desde su CDN en vez de copiar o redistribuir el runtime. Para más
+detalles, consulta [las licencias de CheerpJ](https://cheerpj.com/licensing/).
+
+Para generar la página localmente, desde `Jump-Boy-Port` con JDK 17 o superior:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\build-web.ps1
 ```
 
-El script copia los gráficos necesarios de `res\` a `docs\assets\`; no requiere
-JDK. Sirve la carpeta `docs\` por HTTP para probarla localmente. Para publicarla,
-en **Settings → Pages** selecciona **GitHub Actions** como fuente. El workflow
+El script compila el juego para Java 8 y escribe `docs\jumpboy-web.jar`, junto a
+la página `docs\index.html`. Para publicarlo, sube el repositorio a GitHub y en
+**Settings → Pages** selecciona **GitHub Actions** como fuente. El workflow
 `.github\workflows\build-and-pages.yml` genera y publica la web al actualizar
-`main`; por separado, también compila la aplicación Windows y la adjunta como
-artefacto a la ejecución del workflow.
+`main`; también compila la aplicación Windows y la adjunta como artefacto a la
+ejecución del workflow.
 
 **Jugar online:** <https://stojangb.github.io/rocket-jump-boy-legacy/>
 
@@ -198,8 +205,7 @@ game, packaged as a portable Windows executable.
 Changes: real MIDI playback (the old `AudioSystem` approach could not read
 MIDI), working mute switch, crisp adaptive 3×/2× nearest-neighbor scaling,
 window/exe icon, crash-proof save handling, Space jump and correct `Z` key
-release. The separate browser build is a native JavaScript/Canvas port and
-does not download a Java runtime.
+release.
 
 Original game © SteamHouse. Port by OmkarDev. Rocket Edited packaging and
 fixes as described above. Licensed under GPL-3.0.
