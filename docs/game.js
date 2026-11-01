@@ -339,10 +339,8 @@ function beginGame(level = 0) {
   game.platformIndex = 0;
   game.scrollOffset = 0;
   game.timer = LEVEL_TIMES[game.level];
-  game.playerState = 0;
+  game.playerState = 1;
   game.approachReady = false;
-  game.playerX = 0;
-  game.playerY = HEIGHT;
   game.aimX = 0;
   game.aimY = 0;
   game.velocityX = 0;
@@ -352,6 +350,7 @@ function beginGame(level = 0) {
   game.sourcePlatform = makePlatform(game.tables[game.level].platforms[0], 0);
   game.targetPlatform = makePlatform(game.tables[game.level].platforms[0], 3);
   game.playerX = game.sourcePlatform.x + 4;
+  game.playerY = game.sourcePlatform.y - 26;
   game.objects = [];
   loadObjects(0);
   game.state = "playing";
@@ -399,8 +398,8 @@ function beginNextLevel() {
   game.sourcePlatform = makePlatform(game.tables[game.level].platforms[0], 0);
   game.targetPlatform = makePlatform(game.tables[game.level].platforms[0], 3);
   game.playerX = game.sourcePlatform.x + 4;
-  game.playerY = HEIGHT;
-  game.playerState = 0;
+  game.playerY = game.sourcePlatform.y - 26;
+  game.playerState = 1;
   game.approachReady = false;
   game.aimX = 0;
   game.aimY = 0;
@@ -689,11 +688,11 @@ function update() {
     game.playerY += 6;
     if (game.playerY > HEIGHT + 30) {
       if (game.lives > 0) {
-        game.playerState = 0;
+        game.playerState = 1;
         game.approachReady = false;
         game.brakeJump = false;
         game.playerX = game.sourcePlatform.x + 4;
-        game.playerY = HEIGHT;
+        game.playerY = game.sourcePlatform.y - 26;
         game.velocityX = 0;
         game.velocityY = 0;
         game.aimX = 0;
