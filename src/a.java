@@ -1,7 +1,3 @@
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
 import utils.Utils;
 
 //import javax.microedition.rms.RecordComparator;
@@ -12,12 +8,7 @@ public final class a {
 	int levels_reached;
 
 	public final void loadLevelNo() {
-		try {
-			byte[] data = Files.readAllBytes(Paths.get(Utils.res_folder+"/data/data.bin"));
-			this.levels_reached = data[1];
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
+		byte[] data = Utils.readSave();
+		this.levels_reached = data.length > 1 ? data[1] : 0;
 	}
 }

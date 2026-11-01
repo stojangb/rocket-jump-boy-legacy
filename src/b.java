@@ -14,11 +14,11 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.image.BufferStrategy;
-import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -30,9 +30,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Random;
 
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
 import javax.swing.JFrame;
 
 import utils.Utils;
@@ -182,25 +179,8 @@ public final class b implements Runnable, KeyListener {
 	private boolean bL;
 	private byte bM;
 	private static String bN;
-	private AudioInputStream musicBGStream, musicDieStream;
-	public static Clip bg_clip, die_clip;
 
 	private void a() {
-		InputStream bg_music;
-		InputStream musicDie;
-		try {
-			bg_music = Utils.deepCopy(new FileInputStream(Utils.res_folder + "/music.mid"));
-			musicDie = Utils.deepCopy(new FileInputStream(Utils.res_folder + "/musicDie.mid"));
-			musicBGStream = AudioSystem.getAudioInputStream(new BufferedInputStream(bg_music));
-			musicDieStream = AudioSystem.getAudioInputStream(new BufferedInputStream(musicDie));
-			bg_clip = AudioSystem.getClip();
-			bg_clip.open(musicBGStream);
-			die_clip = AudioSystem.getClip();
-			die_clip.open(musicDieStream);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 		final String s = b.ah[this.ak];
 		this.ar = utils.Image.createImage("/" + s + "/menu_" + s + ".png");
 		this.as = utils.Image.createImage("/" + s + "/gamemenu_" + s + ".png");
@@ -342,15 +322,42 @@ public final class b implements Runnable, KeyListener {
 	Canvas canvas;
 	public Thread thread;
 
-	double pixel_size = 2.4;
+	double pixel_size = 3.0;
 
 	public JFrame frame;
+
+	// ---- On-screen touch controls (browser build only) ----
+	private static final int[] TOUCH_CODES = { 52, 54, 50, 56, 53, 48 };
+	private final java.awt.Rectangle[] touchButtons = {
+			new java.awt.Rectangle(2, 161, 30, 27), // left
+			new java.awt.Rectangle(38, 161, 30, 27), // right
+			new java.awt.Rectangle(20, 132, 30, 27), // up
+			new java.awt.Rectangle(20, 190, 30, 27), // down
+			new java.awt.Rectangle(118, 158, 54, 54), // jump (drawn as a circle)
+			new java.awt.Rectangle(137, 115, 32, 32) }; // extra jump (circle)
+	private int touchHeld = -1;
+	private long touchReleaseAt = 0L;
 
 	public b(JFrame frame) {
 		this.frame = frame;
 		canvas = new Canvas();
 		thread = new Thread(this);
-		canvas.setSize((int) (176 * pixel_size), (int) (220 * pixel_size) + frame.getInsets().top);
+		// Use crisp 3x pixels when the screen is tall enough, otherwise 2x.
+		// In the browser the canvas is scaled by CSS, so always use the full 3x.
+		double scale = 3.0;
+		if (!Utils.webMode) {
+			java.awt.Rectangle work = java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment()
+					.getMaximumWindowBounds();
+			if (220 * scale + 80 > work.height || 176 * scale + 40 > work.width) {
+				scale = 2.0;
+			}
+		}
+		pixel_size = scale;
+		canvas.setSize((int) (176 * pixel_size), (int) (220 * pixel_size));
+		canvas.setBackground(Color.BLACK);
+		if (Utils.webMode) {
+			initTouchControls();
+		}
 		this.a = new Random();
 		this.f = b.d;
 		this.g = b.e;
@@ -523,41 +530,19 @@ public final class b implements Runnable, KeyListener {
 	private void b_void() {
 		byte tmp = (byte) aj[al];
 		ak = tmp;
-		try {
-			byte[] data = getBytesFromSave();
-			data[0] = ak;
-			FileOutputStream write_data = new FileOutputStream(new File(Utils.res_folder + "/data/data.bin"));
-			write_data.write(data);
-			write_data.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		byte[] data = getBytesFromSave();
+		data[0] = ak;
+		Utils.writeSave(data);
 	}
 
 	private void c() {
 		this.ak = 0;
-		try {
-			byte[] data = getBytesFromSave();
-			ak = data[0];
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
+		byte[] data = getBytesFromSave();
+		ak = data[0];
 	}
 
 	private static boolean d() {
-		DataInputStream data;
-		try {
-			InputStream stream = new FileInputStream(new File(Utils.res_folder + "/data/data.bin"));
-			data = new DataInputStream(stream);
-			byte b = getBytesFromSave()[0];
-			if (b == (byte) 0xFF) {
-				return false;
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			return false;
-		}
-		return true;
+		return getBytesFromSave()[0] != (byte) 0xFF;
 	}
 
 	private void e() {
@@ -676,24 +661,24 @@ public final class b implements Runnable, KeyListener {
 	}
 
 	public static byte[] getBytesFromSave() {
-		byte[] data = null;
-		try {
-			data = Files.readAllBytes(Paths.get(Utils.res_folder+"/data/data.bin"));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return data;
+		return Utils.readSave();
 	}
 
 	private void render() {
+		updateTouchRelease();
 		BufferStrategy bs = canvas.getBufferStrategy();
 		if (bs == null) {
 			canvas.createBufferStrategy(3);
 			return;
 		}
 		Graphics2D g = (Graphics2D) bs.getDrawGraphics();
+		g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 		g.scale(pixel_size, pixel_size);
 		paint(g);
+		if (Utils.webMode) {
+			drawTouchControls(g);
+		}
 		if (canvas.hasFocus()) {
 			if (frame.hasFocus() == false) {
 				frame.requestFocus();
@@ -702,6 +687,117 @@ public final class b implements Runnable, KeyListener {
 		Toolkit.getDefaultToolkit().sync();
 		g.dispose();
 		bs.show();
+	}
+
+	// ---- Touch controls (browser build) ----
+
+	/** Connects the on-screen controls to the mouse/touch events of the canvas. */
+	private void initTouchControls() {
+		canvas.addMouseListener(new java.awt.event.MouseAdapter() {
+			public void mousePressed(java.awt.event.MouseEvent e) {
+				touchPress(e.getX(), e.getY());
+			}
+
+			public void mouseReleased(java.awt.event.MouseEvent e) {
+				touchRelease();
+			}
+
+			public void mouseExited(java.awt.event.MouseEvent e) {
+				touchRelease();
+			}
+		});
+	}
+
+	private void touchPress(int screenX, int screenY) {
+		int x = (int) (screenX / pixel_size);
+		int y = (int) (screenY / pixel_size);
+		for (int i = 0; i < touchButtons.length; i++) {
+			if (touchButtons[i].contains(x, y)) {
+				releaseHeldTouch();
+				touchHeld = i;
+				touchReleaseAt = 0L;
+				keyPressed(TOUCH_CODES[i]);
+				return;
+			}
+		}
+	}
+
+	private void touchRelease() {
+		if (touchHeld >= 0 && touchReleaseAt == 0L) {
+			// Hold the key a few milliseconds so very short taps are not lost
+			// between two frames of the game loop.
+			touchReleaseAt = System.currentTimeMillis() + 70L;
+		}
+	}
+
+	private void updateTouchRelease() {
+		if (touchHeld >= 0 && touchReleaseAt != 0L && System.currentTimeMillis() >= touchReleaseAt) {
+			releaseHeldTouch();
+		}
+	}
+
+	private void releaseHeldTouch() {
+		if (touchHeld >= 0) {
+			keyReleased(TOUCH_CODES[touchHeld]);
+			touchHeld = -1;
+		}
+		touchReleaseAt = 0L;
+	}
+
+	private void drawTouchControls(Graphics2D g) {
+		g.setClip(0, 0, 176, 220);
+		Color fill = new Color(0, 0, 0, 90);
+		Color edge = new Color(255, 255, 255, 130);
+		Color hot = new Color(255, 214, 64, 170);
+		for (int i = 0; i < touchButtons.length; i++) {
+			java.awt.Rectangle r = touchButtons[i];
+			boolean down = (i == touchHeld);
+			g.setColor(down ? hot : fill);
+			if (i >= 4) {
+				g.fillOval(r.x, r.y, r.width, r.height);
+			} else {
+				g.fillRoundRect(r.x, r.y, r.width, r.height, 8, 8);
+			}
+			g.setColor(down ? Color.WHITE : edge);
+			if (i >= 4) {
+				g.drawOval(r.x, r.y, r.width, r.height);
+			} else {
+				g.drawRoundRect(r.x, r.y, r.width, r.height, 8, 8);
+			}
+		}
+		g.setColor(new Color(255, 255, 255, 210));
+		arrow(g, 17, 175, 0); // left
+		arrow(g, 53, 175, 2); // right
+		arrow(g, 35, 146, 1); // up
+		arrow(g, 35, 204, 3); // down
+		g.setFont(new java.awt.Font("SansSerif", java.awt.Font.BOLD, 8));
+		drawCentered(g, "JUMP", 145, 186);
+		drawCentered(g, "0", 153, 131);
+	}
+
+	private static void arrow(Graphics2D g, int cx, int cy, int dir) {
+		int s = 6;
+		int[] xs;
+		int[] ys;
+		if (dir == 0) {
+			xs = new int[] { cx - s, cx + s, cx + s };
+			ys = new int[] { cy, cy - s, cy + s };
+		} else if (dir == 2) {
+			xs = new int[] { cx + s, cx - s, cx - s };
+			ys = new int[] { cy, cy - s, cy + s };
+		} else if (dir == 1) {
+			xs = new int[] { cx, cx - s, cx + s };
+			ys = new int[] { cy - s, cy + s, cy + s };
+		} else {
+			xs = new int[] { cx, cx - s, cx + s };
+			ys = new int[] { cy + s, cy - s, cy - s };
+		}
+		g.fillPolygon(xs, ys, 3);
+	}
+
+	private static void drawCentered(Graphics2D g, String text, int cx, int cy) {
+		java.awt.FontMetrics fm = g.getFontMetrics();
+		g.drawString(text, cx - fm.stringWidth(text) / 2, cy + (fm.getAscent() - fm.getDescent()) / 2);
 	}
 
 	public final void paint(final Graphics2D graphics) {
@@ -1429,22 +1525,15 @@ public final class b implements Runnable, KeyListener {
 	}
 
 	private void saveNewScore(final int newScore) {
-		try {
-			File file = new File(Utils.res_folder+"/data/data.bin");
-			byte[] data = getBytesFromSave();
-			for (int index = 0; index < 5; index++) {
-				int offset = 2 + 4 * index;
-				data[offset + 3] = (byte) (rankings[index] & 0xFF);
-				data[offset + 2] = (byte) (rankings[index] >> 8 & 0xFF);
-				data[offset + 1] = (byte) (rankings[index] >> 16 & 0xFF);
-				data[offset + 0] = (byte) (rankings[index] >> 24 & 0xFF);
-			}
-			FileOutputStream writeFile = new FileOutputStream(file);
-			writeFile.write(data);
-			writeFile.close();
-		} catch (IOException e) {
-			e.printStackTrace();
+		byte[] data = getBytesFromSave();
+		for (int index = 0; index < 5; index++) {
+			int offset = 2 + 4 * index;
+			data[offset + 3] = (byte) (rankings[index] & 0xFF);
+			data[offset + 2] = (byte) (rankings[index] >> 8 & 0xFF);
+			data[offset + 1] = (byte) (rankings[index] >> 16 & 0xFF);
+			data[offset + 0] = (byte) (rankings[index] >> 24 & 0xFF);
 		}
+		Utils.writeSave(data);
 	}
 
 	private void h() {
@@ -1769,6 +1858,7 @@ public final class b implements Runnable, KeyListener {
 		case -3: {
 			if (this.bC == 0) {
 				b.bB = !b.bB;
+				c.setEnabled(b.bB);
 			} else if (this.aU == -3) {
 				--this.al;
 				if (this.al < 0) {
@@ -1902,16 +1992,9 @@ public final class b implements Runnable, KeyListener {
 			final a a = this.bt;
 			if (level_no > a.levels_reached) {
 				a.levels_reached = level_no;
-				try {
-					File file = new File(Utils.res_folder+"/data/data.bin");
-					byte[] data = getBytesFromSave();
-					data[1] = (byte) a.levels_reached;
-					FileOutputStream writeFile = new FileOutputStream(file);
-					writeFile.write(data);
-					writeFile.close();
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
+				byte[] data = getBytesFromSave();
+				data[1] = (byte) a.levels_reached;
+				Utils.writeSave(data);
 			}
 			if (this.level_no == 1) {
 				try {
@@ -2765,6 +2848,10 @@ public final class b implements Runnable, KeyListener {
 			// num 0
 			keyPressed(48);
 		}
+		if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+			// same as Enter / num 5
+			keyPressed(53);
+		}
 		if (e.getKeyCode() == KeyEvent.VK_Q) {
 			// num 0
 			keyPressed(-6);
@@ -2791,6 +2878,12 @@ public final class b implements Runnable, KeyListener {
 		}
 		if (e.getKeyCode() == KeyEvent.VK_ENTER) {
 			keyReleased(53);
+		}
+		if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+			keyReleased(53);
+		}
+		if (e.getKeyCode() == KeyEvent.VK_Z) {
+			keyReleased(48);
 		}
 		if (e.getKeyCode() == KeyEvent.VK_Q) {
 			// num 0
