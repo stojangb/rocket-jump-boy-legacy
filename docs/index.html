@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#111827">
-  <meta name="description" content="Juega a Jump Boy en el navegador, en ordenador o en móvil.">
+  <meta name="description" content="Jump Boy clásico jugable en el navegador, con teclado o controles táctiles.">
   <title>Jump Boy</title>
   <style>
     :root {
@@ -22,59 +22,50 @@
       margin: 0;
       display: grid;
       place-items: center;
-      padding: max(1rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom));
+      padding: max(.75rem, env(safe-area-inset-top)) .75rem max(.75rem, env(safe-area-inset-bottom));
     }
 
     main { width: min(100%, 38rem); text-align: center; }
-    h1 { margin: 0; font-size: clamp(1.8rem, 7vw, 2.6rem); }
-    .intro { margin: .5rem 0 1.25rem; color: #cbd5e1; }
+    h1 { margin: 0; font-size: clamp(1.5rem, 6vw, 2rem); }
+    .intro { margin: .25rem 0 .75rem; color: #cbd5e1; }
 
     #display {
-      width: min(100%, 528px, 52.8dvh);
+      width: min(100%, 528px, 74dvh);
       aspect-ratio: 4 / 5;
       margin: 0 auto;
       overflow: hidden;
       border: 2px solid #475569;
-      border-radius: .75rem;
+      border-radius: .5rem;
       background: #000;
       touch-action: none;
     }
 
-    #display canvas {
+    canvas {
+      display: block;
       width: 100%;
       height: 100%;
       image-rendering: pixelated;
       touch-action: none;
+      outline: none;
     }
 
-    #status { min-height: 1.5em; margin: .75rem 0; color: #cbd5e1; }
-
-    button {
-      min-height: 3rem;
-      padding: .7rem 1.3rem;
-      border: 0;
-      border-radius: .6rem;
-      background: #facc15;
-      color: #111827;
-      font: inherit;
-      font-weight: 700;
-      cursor: pointer;
-      touch-action: manipulation;
-    }
-
-    button:disabled { cursor: wait; opacity: .7; }
-    .help { margin: 1rem auto 0; max-width: 34rem; color: #cbd5e1; line-height: 1.55; }
+    #status { min-height: 1.4em; margin: .4rem 0; color: #cbd5e1; }
+    .help { margin: .5rem auto 0; max-width: 34rem; color: #cbd5e1; font-size: .9rem; line-height: 1.45; }
     .help strong { color: #fff; }
-    .credit { margin: .75rem 0 0; color: #94a3b8; font-size: .8rem; }
-    .credit a { color: inherit; }
     .error { color: #fca5a5 !important; }
 
     @media (orientation: landscape) and (max-height: 520px) {
-      body { padding-block: .5rem; }
-      main { display: grid; grid-template-columns: minmax(12rem, 1fr) minmax(14rem, 528px); gap: .75rem 1.25rem; align-items: center; width: min(100%, 60rem); }
+      body { padding-block: .4rem; }
+      main {
+        display: grid;
+        grid-template-columns: minmax(12rem, 1fr) minmax(14rem, 528px);
+        gap: .4rem 1rem;
+        align-items: center;
+        width: min(100%, 60rem);
+      }
       header, .help { grid-column: 1; }
-      #display { grid-column: 2; grid-row: 1 / span 3; width: min(100%, 528px, 72dvh); }
-      #status, #start { grid-column: 1; }
+      #display { grid-column: 2; grid-row: 1 / span 3; width: min(100%, 528px, 90dvh); }
+      #status { grid-column: 1; }
       .intro { margin-bottom: 0; }
     }
   </style>
@@ -83,57 +74,17 @@
   <main>
     <header>
       <h1>Jump Boy</h1>
-      <p class="intro">La aventura clásica, ahora en tu navegador.</p>
+      <p class="intro">El port HTML de Jump Boy, con teclado y controles táctiles.</p>
     </header>
-    <div id="display" aria-label="Pantalla del juego"></div>
-    <p id="status" role="status" aria-live="polite">Pulsa «Jugar» para cargar el juego.</p>
-    <button id="start" type="button">Jugar</button>
+    <div id="display" aria-label="Pantalla del juego">
+      <canvas id="game" width="176" height="220" tabindex="0" aria-label="Jump Boy. Usa las flechas y Enter para jugar."></canvas>
+    </div>
+    <p id="status" role="status" aria-live="polite">Cargando recursos del juego…</p>
     <p class="help">
-      <strong>Ordenador:</strong> flechas para moverte, Espacio o Enter para saltar,
-      Z para el salto extra.<br>
-      <strong>Móvil o tablet:</strong> usa los controles táctiles que aparecen sobre el juego.
-      Para jugar, mantén esta página abierta y con conexión a internet.
+      <strong>Ordenador:</strong> flechas para apuntar, Enter o Espacio para saltar, Z para salto extra y Q para menú.<br>
+      <strong>Móvil o tablet:</strong> toca los controles que aparecen sobre el juego.
     </p>
-    <p class="credit">Built with <a href="https://cheerpj.com/" rel="noopener">CheerpJ 5</a></p>
   </main>
-  <script
-    src="https://cjrtnc.leaningtech.com/5.0/loader.js"
-    onerror="window.cheerpjLoadError = true"
-  ></script>
-  <script>
-    const startButton = document.getElementById("start");
-    const status = document.getElementById("status");
-    const display = document.getElementById("display");
-    let started = false;
-
-    startButton.addEventListener("click", async () => {
-      if (started) return;
-      started = true;
-      startButton.disabled = true;
-      status.textContent = "Cargando Jump Boy…";
-
-      try {
-        if (window.cheerpjLoadError) {
-          throw new Error("No se pudo descargar el motor Java del servidor oficial de CheerpJ. Comprueba la conexión o si tu red bloquea cheerpj.com y vuelve a intentarlo.");
-        }
-        if (typeof cheerpjInit !== "function" || typeof cheerpjRunMain !== "function") {
-          throw new Error("El motor Java de CheerpJ no se ha cargado. Comprueba la conexión o si tu red bloquea cheerpj.com y vuelve a intentarlo.");
-        }
-
-        await cheerpjInit();
-        cheerpjCreateDisplay(528, 660, display);
-        status.textContent = "Iniciando juego…";
-        await cheerpjRunMain("rocket", "/app/jumpboy-web.jar", "web");
-        status.textContent = "¡Que te diviertas!";
-        startButton.hidden = true;
-      } catch (error) {
-        console.error("No se pudo iniciar Jump Boy:", error);
-        status.textContent = error.message || "No se pudo iniciar el juego. Recarga la página para volver a intentarlo.";
-        status.classList.add("error");
-        started = false;
-        startButton.disabled = false;
-      }
-    });
-  </script>
+  <script type="module" src="./game.js"></script>
 </body>
 </html>

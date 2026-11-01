@@ -2,4 +2,6 @@
 /build-web/
 /dist/
 /docs/jumpboy-web.jar
+/docs/assets/
+/docs/levels.json
 /res/data/data.bin
