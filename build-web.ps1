@@ -16,7 +16,16 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-if (-not $Jdk -or -not (Test-Path (Join-Path $Jdk "bin\javac.exe"))) {
+if ($PSVersionTable.PSVersion.Major -ge 6) {
+    $exeSuffix = if ($IsWindows) { ".exe" } else { "" }
+} else {
+    $exeSuffix = if ($env:OS -eq "Windows_NT") { ".exe" } else { "" }
+}
+$bin = if ($Jdk) { Join-Path $Jdk "bin" } else { "" }
+$javac = if ($bin) { Join-Path $bin "javac$exeSuffix" } else { "" }
+$jarTool = if ($bin) { Join-Path $bin "jar$exeSuffix" } else { "" }
+
+if (-not $Jdk -or -not (Test-Path $javac) -or -not (Test-Path $jarTool)) {
     throw "JDK not found. Set JAVA_HOME or pass -Jdk 'C:\path\to\jdk-17'."
 }
 
@@ -34,7 +43,7 @@ New-Item -ItemType Directory -Force -Path $classes, $stage | Out-Null
 Write-Host "==> Compiling for Java 8 (CheerpJ)" -ForegroundColor Cyan
 $sources = Get-ChildItem -Path $src -Recurse -Filter *.java | ForEach-Object { $_.FullName }
 Push-Location $src
-& (Join-Path $Jdk "bin\javac.exe") --release 8 -encoding UTF-8 -d $classes $sources
+& $javac --release 8 -encoding UTF-8 -d $classes $sources
 $code = $LASTEXITCODE
 Pop-Location
 if ($code -ne 0) { throw "javac failed with exit code $code" }
@@ -47,7 +56,7 @@ $files = Get-ChildItem -Path $res -Recurse -File |
     Sort-Object
 $files | Set-Content -Path (Join-Path $stage "webfiles.txt") -Encoding ASCII
 
-& (Join-Path $Jdk "bin\jar.exe") --create --file $jar --main-class rocket `
+& $jarTool --create --file $jar --main-class rocket `
     -C $classes . -C $PSScriptRoot res -C $stage webfiles.txt
 if ($LASTEXITCODE -ne 0) { throw "jar failed with exit code $LASTEXITCODE" }
 
