@@ -4,6 +4,12 @@ Port moderno a Java de **Jump Boy**, el clásico juego para móviles Java ME (MI
 de **SteamHouse**. Esta edición **Rocket Edited** añade un ejecutable autónomo
 para Windows, arregla el sonido y pule varios detalles del port original.
 
+<p align="center">
+  <a href="https://stojangb.github.io/rocket-jump-boy-legacy/">
+    <img src="docs/play-button.svg" alt="Jugar Jump Boy en la web" width="420">
+  </a>
+</p>
+
 > **Jugar:** doble clic en **`Jump Boy.exe`** (carpeta principal) o en
 > **`Rocket Edited\Rocket Edited.exe`**. No hace falta instalar Java:
 > el runtime va incluido.
