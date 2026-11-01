@@ -753,10 +753,11 @@ function drawHud() {
 function drawPlayer() {
   const sprite = game.heavy ? "fatman" : "man";
   if (game.playerState === 1) {
-    const aim = game.facing === 0 ? 40 : 0;
-    drawImage("aim", game.playerX + (game.facing === 0 ? 18 : -36), game.playerY - 28,
+    const facing = game.aimX < 0 ? 1 : 0;
+    const aim = facing === 0 ? 40 : 0;
+    drawImage("aim", game.playerX + (facing === 0 ? 18 : -36), game.playerY - 28,
       40, 40, aim, 0, 40, 40);
-    drawFull("needle", game.playerX + 18 + 2 * game.aimX,
+    drawFull("needle", game.playerX + (facing === 0 ? 18 : 1) + 2 * game.aimX,
       game.playerY + 8 - 2 * game.aimY);
   }
   let pose = 0;
