@@ -38,7 +38,7 @@ para Windows, arregla el sonido y pule varios detalles del port original.
 | Salto extra (cuando tienes “breaks”) | `Z` o `0` |
 | Botones blandos del móvil (atrás / opciones) | `Q` / `W` |
 | Navegar menús | Flechas + `Enter` / `Espacio` |
-| Móvil o tablet | Controles táctiles que aparecen en la versión web |
+| Móvil o tablet | Toca o arrastra dentro del arco para apuntar; usa `SALTO` para lanzar y el botón superior para pausar |
 
 ## Contenido del paquete
 

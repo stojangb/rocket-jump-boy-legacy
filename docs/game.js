@@ -14,6 +14,7 @@ const MENU_ITEMS = 6;
 const canvas = document.querySelector("#game");
 const context = canvas.getContext("2d", { alpha: false });
 const status = document.querySelector("#status");
+const touchDevice = window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
 context.imageSmoothingEnabled = false;
 
 const images = new Map();
@@ -73,7 +74,7 @@ const game = {
   timer: 0,
   stateBeforePause: "playing",
   returnState: "menu",
-  touchVisible: false,
+  touchVisible: touchDevice,
   touched: new Set(),
   lastFrame: 0,
   accumulator: 0
@@ -108,7 +109,9 @@ async function loadResources() {
   }));
   loadSave();
   game.ready = true;
-  status.textContent = "Usa las flechas y Enter. En móvil, toca los controles del juego.";
+  status.textContent = touchDevice
+    ? "Toca o arrastra dentro del arco para apuntar y pulsa SALTO."
+    : "Usa las flechas para apuntar y Enter para saltar.";
   canvas.focus({ preventScroll: true });
 }
 
@@ -277,7 +280,7 @@ function drawHelp() {
   const sourceName = image(name) ? name : `en/help_en_${game.helpPage}`;
   const source = image(sourceName);
   if (source) drawImage(sourceName, (WIDTH - source.width) / 2, (HEIGHT - source.height) / 2, source.width, source.height);
-  drawCenteredText("ENTER: NEXT   Q: BACK", 205);
+  drawCenteredText("TOCA: SIGUE / ATRAS", 205);
 }
 
 function drawOptions() {
@@ -291,7 +294,7 @@ function drawOptions() {
   drawLineFromSheet("lang", [0, 4, 6][game.languageIndex], 8, 109, 105);
   drawFull("menu_arrow_left", 83, 151);
   drawFull("menu_arrow_right", 117, 151);
-  drawCenteredText("Q: BACK", 196);
+  drawCenteredText("TOCA ABAJO: ATRAS", 196);
 }
 
 function drawRankings() {
@@ -772,67 +775,32 @@ function drawPlayer() {
 function drawTouchControls() {
   if (!game.touchVisible || game.state !== "playing") return;
   const buttons = [
-    { x: 2, y: 161, w: 30, h: 27, label: "‹", code: -3 },
-    { x: 38, y: 161, w: 30, h: 27, label: "›", code: -4 },
-    { x: 20, y: 132, w: 30, h: 27, label: "▲", code: -1 },
-    { x: 20, y: 190, w: 30, h: 27, label: "▼", code: -2 },
-    { x: 118, y: 158, w: 54, h: 54, label: "JUMP", code: 53, round: true },
-    { x: 137, y: 115, w: 32, h: 32, label: "Z", code: 48, round: true }
+    { x: 118, y: 158, w: 54, h: 54, code: 53 },
+    { x: 152, y: 25, w: 20, h: 20, code: -6 }
   ];
   context.save();
   context.textAlign = "center";
   context.textBaseline = "middle";
-  context.font = "bold 8px system-ui, sans-serif";
   for (const button of buttons) {
     const held = game.touched.has(button.code);
-    context.fillStyle = held ? "rgba(255,214,64,.78)" : "rgba(0,0,0,.36)";
-    context.strokeStyle = held ? "#fff" : "rgba(255,255,255,.62)";
+    context.fillStyle = held ? "rgba(255,214,64,.82)" : "rgba(0,0,0,.42)";
+    context.strokeStyle = held ? "#fff" : "rgba(255,255,255,.72)";
     context.lineWidth = 1;
-    if (button.round) {
-      context.beginPath();
-      context.ellipse(button.x + button.w / 2, button.y + button.h / 2, button.w / 2, button.h / 2, 0, 0, Math.PI * 2);
-      context.fill();
-      context.stroke();
+    context.beginPath();
+    context.ellipse(button.x + button.w / 2, button.y + button.h / 2,
+      button.w / 2, button.h / 2, 0, 0, Math.PI * 2);
+    context.fill();
+    context.stroke();
+    context.fillStyle = "#fff";
+    if (button.code === 53) {
+      context.font = "bold 8px system-ui, sans-serif";
+      context.fillText("SALTO", button.x + button.w / 2, button.y + button.h / 2);
     } else {
-      context.beginPath();
-      context.roundRect(button.x, button.y, button.w, button.h, 6);
-      context.fill();
-      context.stroke();
-    }
-    if (button.round) {
-      context.fillStyle = "#fff";
-      context.fillText(button.label, button.x + button.w / 2, button.y + button.h / 2);
-    } else {
-      drawTouchArrow(button.x + button.w / 2, button.y + button.h / 2, button.code);
+      context.fillRect(button.x + 7, button.y + 5, 2, 10);
+      context.fillRect(button.x + 11, button.y + 5, 2, 10);
     }
   }
   context.restore();
-}
-
-function drawTouchArrow(cx, cy, code) {
-  const size = 6;
-  let x;
-  let y;
-  if (code === -3) {
-    x = [cx - size, cx + size, cx + size];
-    y = [cy, cy - size, cy + size];
-  } else if (code === -4) {
-    x = [cx + size, cx - size, cx - size];
-    y = [cy, cy - size, cy + size];
-  } else if (code === -1) {
-    x = [cx, cx - size, cx + size];
-    y = [cy - size, cy + size, cy + size];
-  } else {
-    x = [cx, cx - size, cx + size];
-    y = [cy + size, cy - size, cy - size];
-  }
-  context.fillStyle = "#fff";
-  context.beginPath();
-  context.moveTo(x[0], y[0]);
-  context.lineTo(x[1], y[1]);
-  context.lineTo(x[2], y[2]);
-  context.closePath();
-  context.fill();
 }
 
 function draw() {
@@ -924,15 +892,11 @@ window.addEventListener("keyup", (event) => {
 window.addEventListener("blur", () => heldKeys.clear());
 
 const touchButtons = [
-  { x: 2, y: 161, w: 30, h: 27, code: -3 },
-  { x: 38, y: 161, w: 30, h: 27, code: -4 },
-  { x: 20, y: 132, w: 30, h: 27, code: -1 },
-  { x: 20, y: 190, w: 30, h: 27, code: -2 },
   { x: 118, y: 158, w: 54, h: 54, code: 53 },
-  { x: 137, y: 115, w: 32, h: 32, code: 48 }
+  { x: 152, y: 25, w: 20, h: 20, code: -6 }
 ];
 let activePointerCode = null;
-let touchReleaseTimer = 0;
+let activeAimPointerId = null;
 
 function canvasPoint(event) {
   const bounds = canvas.getBoundingClientRect();
@@ -940,6 +904,30 @@ function canvasPoint(event) {
     x: (event.clientX - bounds.left) * WIDTH / bounds.width,
     y: (event.clientY - bounds.top) * HEIGHT / bounds.height
   };
+}
+
+function updateAimFromPoint(point) {
+  if (game.playerState !== 1) return false;
+
+  const left = point.x < game.playerX + 9;
+  const minX = left ? game.playerX - 40 : game.playerX + 12;
+  const maxX = left ? game.playerX + 8 : game.playerX + 60;
+  if (point.x < minX || point.x > maxX
+      || point.y < game.playerY - 32 || point.y > game.playerY + 14) return false;
+
+  const pointerOriginX = left ? game.playerX + 1 : game.playerX + 18;
+  game.aimX = Math.max(-18, Math.min(18, Math.round((point.x - 2.5 - pointerOriginX) / 2)));
+  game.aimY = Math.max(0, Math.min(18, Math.round((game.playerY + 10.5 - point.y) / 2)));
+  if (left) game.aimX = Math.min(-1, game.aimX);
+  else game.aimX = Math.max(0, game.aimX);
+
+  const magnitude = Math.hypot(game.aimX, game.aimY);
+  if (magnitude > 18) {
+    const scale = 18 / magnitude;
+    game.aimX = Math.trunc(game.aimX * scale);
+    game.aimY = Math.trunc(game.aimY * scale);
+  }
+  return true;
 }
 
 canvas.addEventListener("pointerdown", (event) => {
@@ -955,13 +943,10 @@ canvas.addEventListener("pointerdown", (event) => {
       activePointerCode = button.code;
       game.touched.add(button.code);
       onAction(button.code);
-      clearTimeout(touchReleaseTimer);
-      touchReleaseTimer = window.setTimeout(() => {
-        if (activePointerCode !== null) {
-          game.touched.delete(activePointerCode);
-          activePointerCode = null;
-        }
-      }, 100);
+      canvas.setPointerCapture(event.pointerId);
+    } else if (game.playerState === 1 && updateAimFromPoint(point)) {
+      event.preventDefault();
+      activeAimPointerId = event.pointerId;
       canvas.setPointerCapture(event.pointerId);
     }
   } else if (game.state === "menu") {
@@ -971,6 +956,10 @@ canvas.addEventListener("pointerdown", (event) => {
       selectMenuItem();
     }
   } else if (game.state === "map") {
+    if (point.y >= HEIGHT - 30) {
+      game.state = "menu";
+      return;
+    }
     let nearest = 0;
     let distance = Number.POSITIVE_INFINITY;
     for (let index = 0; index <= game.unlocked; index += 1) {
@@ -996,23 +985,42 @@ canvas.addEventListener("pointerdown", (event) => {
       game.languageIndex = (game.languageIndex + 1) % LANGUAGES.length;
       game.language = LANGUAGES[game.languageIndex];
       saveGame();
+    } else if (point.y >= 176) {
+      onAction(-6);
     }
+  } else if (game.state === "pause") {
+    const row = Math.floor((point.y - 70) / 16);
+    if (row >= 0 && row < 4) {
+      game.menuIndex = row;
+      onAction(53);
+    }
+  } else if (game.state === "help") {
+    if (game.helpPage === 0 && point.x >= WIDTH / 2) onAction(53);
+    else onAction(-7);
+  } else if (game.state === "rankings" || game.state === "gameover" || game.state === "won") {
+    onAction(53);
   }
+});
+
+canvas.addEventListener("pointermove", (event) => {
+  if (activeAimPointerId !== event.pointerId) return;
+  event.preventDefault();
+  updateAimFromPoint(canvasPoint(event));
 });
 
 canvas.addEventListener("pointerup", (event) => {
   if (activePointerCode !== null) {
-    clearTimeout(touchReleaseTimer);
     game.touched.delete(activePointerCode);
     activePointerCode = null;
-  } else if (game.state === "playing" && event.pointerType === "touch") {
-    onAction(53);
+  }
+  if (activeAimPointerId === event.pointerId) {
+    activeAimPointerId = null;
   }
 });
 canvas.addEventListener("pointercancel", () => {
   if (activePointerCode !== null) game.touched.delete(activePointerCode);
   activePointerCode = null;
-  clearTimeout(touchReleaseTimer);
+  activeAimPointerId = null;
 });
 
 status.classList.remove("error");
