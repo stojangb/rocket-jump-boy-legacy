@@ -85,6 +85,8 @@ iniciales. Para empezar de cero, bórralo con el juego cerrado.
   rellena si está incompleto, sin excepciones.
 - **Controles más cómodos:** `Espacio` también salta y `Z` se libera
   correctamente.
+- **30 vidas iniciales** (diez veces las tres originales), con bonus de nivel
+  que las aumenta sin reducirlas.
 - **Ejecutable portable** generado con `jpackage`, con Java 17 incluido.
 - **Arranque de audio precargado**, para que la música empiece sin tirones.
 
@@ -93,7 +95,8 @@ iniciales. Para empezar de cero, bórralo con el juego cerrado.
 La página de GitHub Pages es una reimplementación en HTML Canvas y JavaScript:
 no necesita CheerpJ, Java, Unity ni un servicio externo. Reutiliza los sprites
 y exporta las tablas originales de plataformas y objetos desde `src\b.java`.
-Incluye controles táctiles y de teclado, progresión de niveles, vidas,
+Incluye controles táctiles y de teclado, progresión de niveles, 30 vidas
+iniciales (diez veces las tres originales),
 puntuación, selección de idioma y guardado local. No es una conversión literal
 del código Java: algunas animaciones y detalles de pantalla pueden diferir. El
 audio utiliza las pistas MIDI originales `music.mid` y `musicDie.mid`, tocadas

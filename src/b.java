@@ -1922,11 +1922,11 @@ public final class b implements Runnable, KeyListener {
 		switch (this.aT) {
 		case 0: {
 			this.i();
-			// breaks and lifes initially are 3
+			// The starting life count is ten times the original.
 			this.j = 0;
 			this.breaks = 3;
 			this.G = 15;
-			this.lifes = 3;
+			this.lifes = 30;
 			this.p = 0;
 			this.level_no = 0;
 			this.u = 0;
@@ -1968,9 +1968,8 @@ public final class b implements Runnable, KeyListener {
 		case 0: {
 			if (this.lifes >= 3) {
 				++this.lifes;
-				if (this.lifes > 9) {
-					// life should be 9 here
-					this.lifes = 9;
+				if (this.lifes > 99) {
+					this.lifes = 99;
 				}
 			} else {
 				// lifes should be 3

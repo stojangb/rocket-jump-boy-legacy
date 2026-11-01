@@ -61,7 +61,7 @@ const game = {
   facing: 0,
   frame: 0,
   score: 0,
-  lives: 3,
+  lives: 30,
   breaks: 3,
   energy: 15,
   energyToggle: false,
@@ -330,7 +330,7 @@ function drawPause() {
 function beginGame(level = 0) {
   game.level = Math.min(9, Math.max(0, level));
   game.score = 0;
-  game.lives = 3;
+  game.lives = 30;
   game.breaks = 3;
   game.energy = 15;
   game.energyToggle = false;
@@ -391,7 +391,7 @@ function beginNextLevel() {
   }
   game.level += 1;
   game.unlocked = Math.max(game.unlocked, game.level);
-  game.lives = game.lives >= 3 ? Math.min(9, game.lives + 1) : 3;
+  game.lives = game.lives >= 3 ? Math.min(99, game.lives + 1) : 3;
   saveGame();
   game.platformIndex = 0;
   game.timer = LEVEL_TIMES[game.level];
