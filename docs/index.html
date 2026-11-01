@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#111827">
   <meta name="description" content="Juega a Jump Boy en el navegador, en ordenador o en móvil.">
-  <title>Jump Boy</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <title>Jump Boy — Rocket Edited</title>
   <style>
     :root {
       color-scheme: dark;
@@ -27,7 +28,7 @@
 
     main { width: min(100%, 38rem); text-align: center; }
     h1 { margin: 0; font-size: clamp(1.8rem, 7vw, 2.6rem); }
-    .intro { margin: .5rem 0 1.25rem; color: #cbd5e1; }
+    .intro { margin: .35rem 0 1rem; color: #cbd5e1; }
 
     #display {
       width: min(100%, 528px, 52.8dvh);
@@ -37,14 +38,16 @@
       border: 2px solid #475569;
       border-radius: .75rem;
       background: #000;
-      touch-action: none;
+      box-shadow: 0 1rem 3rem #0008;
     }
 
-    #display canvas {
+    #game {
+      display: block;
       width: 100%;
       height: 100%;
       image-rendering: pixelated;
       touch-action: none;
+      outline: none;
     }
 
     #status { min-height: 1.5em; margin: .75rem 0; color: #cbd5e1; }
@@ -63,15 +66,19 @@
     }
 
     button:disabled { cursor: wait; opacity: .7; }
-    .help { margin: 1rem auto 0; max-width: 34rem; color: #cbd5e1; line-height: 1.55; }
+    .help { margin: .8rem auto 0; max-width: 34rem; color: #cbd5e1; line-height: 1.5; }
     .help strong { color: #fff; }
-    .credit { margin: .75rem 0 0; color: #94a3b8; font-size: .8rem; }
-    .credit a { color: inherit; }
-    .error { color: #fca5a5 !important; }
+    .credit { margin: .65rem 0 0; color: #94a3b8; font-size: .8rem; }
 
     @media (orientation: landscape) and (max-height: 520px) {
       body { padding-block: .5rem; }
-      main { display: grid; grid-template-columns: minmax(12rem, 1fr) minmax(14rem, 528px); gap: .75rem 1.25rem; align-items: center; width: min(100%, 60rem); }
+      main {
+        display: grid;
+        grid-template-columns: minmax(12rem, 1fr) minmax(14rem, 528px);
+        gap: .5rem 1.25rem;
+        align-items: center;
+        width: min(100%, 60rem);
+      }
       header, .help { grid-column: 1; }
       #display { grid-column: 2; grid-row: 1 / span 3; width: min(100%, 528px, 72dvh); }
       #status, #start { grid-column: 1; }
@@ -85,55 +92,25 @@
       <h1>Jump Boy</h1>
       <p class="intro">La aventura clásica, ahora en tu navegador.</p>
     </header>
-    <div id="display" aria-label="Pantalla del juego"></div>
-    <p id="status" role="status" aria-live="polite">Pulsa «Jugar» para cargar el juego.</p>
-    <button id="start" type="button">Jugar</button>
+    <div id="display" aria-label="Pantalla del juego">
+      <canvas id="game" width="528" height="660" tabindex="0"
+        aria-label="Jump Boy. Usa las flechas para moverte y Espacio o Z para el salto extra."></canvas>
+    </div>
+    <p id="status" role="status" aria-live="polite">Cargando recursos del juego…</p>
+    <button id="start" type="button" disabled>Jugar</button>
     <p class="help">
-      <strong>Ordenador:</strong> flechas para moverte, Espacio o Enter para saltar,
-      Z para el salto extra.<br>
-      <strong>Móvil o tablet:</strong> usa los controles táctiles que aparecen sobre el juego.
-      Para jugar, mantén esta página abierta y con conexión a internet.
+      <strong>Ordenador:</strong> ← / → o A / D para moverte; Espacio o Z para el salto extra; Esc para pausar.<br>
+      <strong>Móvil o tablet:</strong> mantén pulsadas las flechas y el botón de salto en la pantalla.
     </p>
-    <p class="credit">Built with <a href="https://cheerpj.com/" rel="noopener">CheerpJ 5</a></p>
+    <p class="credit">Versión web nativa con JavaScript y Canvas. El juego Windows en Java no cambia.</p>
   </main>
-  <script
-    src="https://cjrtnc.leaningtech.com/5.0/loader.js"
-    onerror="window.cheerpjLoadError = true"
-  ></script>
+  <script src="./game.js" defer></script>
   <script>
-    const startButton = document.getElementById("start");
-    const status = document.getElementById("status");
-    const display = document.getElementById("display");
-    let started = false;
-
-    startButton.addEventListener("click", async () => {
-      if (started) return;
-      started = true;
-      startButton.disabled = true;
-      status.textContent = "Cargando Jump Boy…";
-
-      try {
-        if (window.cheerpjLoadError) {
-          throw new Error("No se pudo descargar el motor Java del servidor oficial de CheerpJ. Comprueba la conexión o si tu red bloquea cheerpj.com y vuelve a intentarlo.");
-        }
-        if (typeof cheerpjInit !== "function" || typeof cheerpjRunMain !== "function") {
-          throw new Error("El motor Java de CheerpJ no se ha cargado. Comprueba la conexión o si tu red bloquea cheerpj.com y vuelve a intentarlo.");
-        }
-
-        await cheerpjInit();
-        cheerpjCreateDisplay(528, 660, display);
-        status.textContent = "Iniciando juego…";
-        await cheerpjRunMain("rocket", "/app/jumpboy-web.jar", "web");
-        status.textContent = "¡Que te diviertas!";
-        startButton.hidden = true;
-      } catch (error) {
-        console.error("No se pudo iniciar Jump Boy:", error);
-        status.textContent = error.message || "No se pudo iniciar el juego. Recarga la página para volver a intentarlo.";
-        status.classList.add("error");
-        started = false;
-        startButton.disabled = false;
-      }
-    });
+    if ("serviceWorker" in navigator && location.protocol !== "file:") {
+      navigator.serviceWorker.register("./sw.js").catch((error) => {
+        console.error("No se pudo preparar la caché sin conexión de Jump Boy:", error);
+      });
+    }
   </script>
 </body>
 </html>
