@@ -90,11 +90,19 @@ iniciales. Para empezar de cero, bórralo con el juego cerrado.
 
 ## Versión web (GitHub Pages)
 
-La versión web ejecuta el port Java en el navegador con **CheerpJ**; no es una
-compilación Unity/WebGL. El código de este repositorio tampoco contiene un
-proyecto Android/Unity. En ordenador se puede jugar con el teclado y en móvil o
-tablet aparecen controles táctiles dentro del juego. La primera carga requiere
-conexión a Internet para descargar el runtime de CheerpJ.
+La versión web ejecuta el port Java en el navegador con **CheerpJ 5**, desde el
+CDN oficial; no es una compilación Unity/WebGL. El código de este repositorio
+tampoco contiene un proyecto Android/Unity. En ordenador se puede jugar con el
+teclado y en móvil o tablet aparecen controles táctiles dentro del juego. La
+primera carga requiere conexión al CDN de CheerpJ. Si tu red bloquea
+`cheerpj.com`, el juego de navegador no podrá descargar ese runtime. El Java
+privado incluido en la versión Windows solo funciona en el ordenador: un
+navegador no puede ejecutar ese runtime ni el `.jar` directamente.
+
+CheerpJ permite alojar sus propios archivos de runtime, pero su licencia
+reserva esa modalidad para licencias Enterprise. Por eso el proyecto carga
+CheerpJ desde su CDN en vez de copiar o redistribuir el runtime. Para más
+detalles, consulta [las licencias de CheerpJ](https://cheerpj.com/licensing/).
 
 Para generar la página localmente, desde `Jump-Boy-Port` con JDK 17 o superior:
 

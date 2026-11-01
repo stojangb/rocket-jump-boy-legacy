@@ -65,6 +65,8 @@
     button:disabled { cursor: wait; opacity: .7; }
     .help { margin: 1rem auto 0; max-width: 34rem; color: #cbd5e1; line-height: 1.55; }
     .help strong { color: #fff; }
+    .credit { margin: .75rem 0 0; color: #94a3b8; font-size: .8rem; }
+    .credit a { color: inherit; }
     .error { color: #fca5a5 !important; }
 
     @media (orientation: landscape) and (max-height: 520px) {
@@ -92,8 +94,12 @@
       <strong>Móvil o tablet:</strong> usa los controles táctiles que aparecen sobre el juego.
       Para jugar, mantén esta página abierta y con conexión a internet.
     </p>
+    <p class="credit">Built with <a href="https://cheerpj.com/" rel="noopener">CheerpJ 5</a></p>
   </main>
-  <script src="https://cjrtnc.leaningtech.com/4.2/loader.js"></script>
+  <script
+    src="https://cjrtnc.leaningtech.com/5.0/loader.js"
+    onerror="window.cheerpjLoadError = true"
+  ></script>
   <script>
     const startButton = document.getElementById("start");
     const status = document.getElementById("status");
@@ -107,8 +113,11 @@
       status.textContent = "Cargando Jump Boy…";
 
       try {
+        if (window.cheerpjLoadError) {
+          throw new Error("No se pudo descargar el motor Java del servidor oficial de CheerpJ. Comprueba la conexión o si tu red bloquea cheerpj.com y vuelve a intentarlo.");
+        }
         if (typeof cheerpjInit !== "function" || typeof cheerpjRunMain !== "function") {
-          throw new Error("No se pudo cargar CheerpJ. Comprueba tu conexión e inténtalo de nuevo.");
+          throw new Error("El motor Java de CheerpJ no se ha cargado. Comprueba la conexión o si tu red bloquea cheerpj.com y vuelve a intentarlo.");
         }
 
         await cheerpjInit();
